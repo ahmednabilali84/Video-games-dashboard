@@ -120,4 +120,4 @@ with tab5:
     st.plotly_chart(px.pie(region_data, names='Region', values='Sales', 
                           title="Sales Distribution by Region", hole=0.4), use_container_width=True)
 
-st.caption("Dashboard built for Ahmed | Data: vgsales.csv")
+st.caption("Dashboard built by Ahmed Nabil | Data: vgsales.csv")
