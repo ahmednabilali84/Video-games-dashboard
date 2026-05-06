@@ -67,7 +67,7 @@ if other_filter: region_mask |= (filtered_df['Other_Sales'] > 0)
 filtered_df = filtered_df[region_mask]
 
 # ====================== TABS ======================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Overview", "🥧 Pie Charts", "📈 Trends", "🔥 Insights", "📍 Regional Analysis"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Overview", "📊 Distributions", "📈 Trends", "🔥 Insights", "📍 Regional Analysis"])
 
 with tab1:
     col1, col2, col3, col4 = st.columns(4)
