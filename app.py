@@ -92,43 +92,35 @@ with tab2:
         st.plotly_chart(px.pie(family_sales, names='Platform_Family', values='Global_Sales',
                              title="Sales by Platform Family", hole=0.4), use_container_width=True)
 
-with tab3:   # ================== TRENDS TAB ==================
-    st.subheader("📈 Sales Trends by Region")
+with tab3:
+    st.subheader("📈 Sales Trends Over Years")
     
-    # Prepare data for all regions
-    trend_data = filtered_df.groupby('Year').agg({
+    # Prepare yearly data
+    yearly = filtered_df.groupby('Year').agg({
         'Global_Sales': 'sum',
         'NA_Sales': 'sum',
         'EU_Sales': 'sum',
         'JP_Sales': 'sum',
         'Other_Sales': 'sum'
     }).reset_index()
-
-    # Create multi-line chart
-    fig_trends = px.line(trend_data, x='Year', 
-                        y=['Global_Sales', 'NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales'],
-                        title="Sales Trends Over Years by Region",
-                        markers=True,
-                        line_shape="spline")
     
-    fig_trends.update_layout(
-        xaxis_title="Release Year",
-        yaxis_title="Sales (in millions)",
-        legend_title="Region"
-    )
+    # 1. Global Sales - Separate Chart
+    fig_global = px.line(yearly, x='Year', y='Global_Sales', title="Global Sales Trend",markers=True, line_shape="spline")
+    fig_global.update_layout(xaxis_title="Year", yaxis_title="Sales (Millions)")
+    st.plotly_chart(fig_global, use_container_width=True)
     
-    st.plotly_chart(fig_trends, use_container_width=True)
-
-    # Individual region trends (optional but nice)
-    st.subheader("Individual Region Trends")
+    # 2. Regional Trends
+    st.subheader("Regional Sales Trends")
     col1, col2 = st.columns(2)
+    
     with col1:
-        st.plotly_chart(px.line(trend_data, x='Year', y='NA_Sales', title="North America Sales Trend"), use_container_width=True)
-        st.plotly_chart(px.line(trend_data, x='Year', y='JP_Sales', title="Japan Sales Trend"), use_container_width=True)
+        st.plotly_chart(px.line(yearly, x='Year', y='NA_Sales', title="North America Sales Trend", markers=True), use_container_width=True)
+        st.plotly_chart(px.line(yearly, x='Year', y='EU_Sales', title="Europe Sales Trend", markers=True), use_container_width=True)
+    
     with col2:
-        st.plotly_chart(px.line(trend_data, x='Year', y='EU_Sales', title="Europe Sales Trend"), use_container_width=True)
-        st.plotly_chart(px.line(trend_data, x='Year', y='Other_Sales', title="Other Regions Sales Trend"), use_container_width=True)
-
+        st.plotly_chart(px.line(yearly, x='Year', y='JP_Sales', title="Japan Sales Trend", markers=True), use_container_width=True)
+        st.plotly_chart(px.line(yearly, x='Year', y='Other_Sales', title="Other Regions Sales Trend", markers=True), use_container_width=True)
+        
 with tab4:
     st.subheader("Platform Family Performance")
     family_perf = filtered_df.groupby('Platform_Family').agg(
