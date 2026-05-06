@@ -104,8 +104,8 @@ with tab3:
         'Other_Sales': 'sum'
     }).reset_index()
     
-    # 1. Global Sales - Separate Chart
-    fig_global = px.line(yearly, x='Year', y='Global_Sales', title="Global Sales Trend",markers=True, line_shape="spline")
+    # 1. Global Sales
+    fig_global = px.line(yearly, x='Year', y='Global_Sales', title="Global Sales Trend",markers=True)
     fig_global.update_layout(xaxis_title="Year", yaxis_title="Sales (Millions)")
     st.plotly_chart(fig_global, use_container_width=True)
     
@@ -139,5 +139,34 @@ with tab5:
     })
     st.plotly_chart(px.pie(region_data, names='Region', values='Sales', 
                           title="Sales Distribution by Region", hole=0.4), use_container_width=True)
+    st.subheader("🌍 Genre Sales Distribution by Region")
+    
+    regions = {
+        'North America': 'NA_Sales',
+        'Europe': 'EU_Sales',
+        'Japan': 'JP_Sales',
+        'Other Regions': 'Other_Sales'
+    }
+    
+    cols = st.columns(2)
+    
+    for i, (region_name, sales_col) in enumerate(regions.items()):
+        with cols[i % 2]:
+            # Aggregate sales by genre for this region
+            region_data = filtered_df.groupby('Genre')[sales_col].sum().reset_index()
+            region_data = region_data[region_data[sales_col] > 0].sort_values(sales_col, ascending=False)
+            
+            if not region_data.empty:
+                fig = px.pie(
+                    region_data.head(10), 
+                    names='Genre', 
+                    values=sales_col,
+                    title=f"{region_name} - Top Genres Distribution",
+                    hole=0.35
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info(f"No sales data available for {region_name}")
 
 st.caption("Built by Ahmed Nabil | Built with Streamlit")
