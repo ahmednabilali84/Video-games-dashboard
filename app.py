@@ -14,7 +14,6 @@ def load_data():
     df['Year'] = df['Year'].fillna(df['Year'].median()).astype(int)
     df['Publisher'] = df['Publisher'].fillna('Unknown')
     
-    # Platform Family
     def get_family(p):
         if any(x in str(p) for x in ['PS', 'PSP', 'PSV']): return 'PlayStation'
         if any(x in str(p) for x in ['X360', 'XB', 'XOne']): return 'Xbox'
@@ -30,18 +29,14 @@ df = load_data()
 # ====================== SIDEBAR FILTERS ======================
 st.sidebar.header("🔍 Filters")
 
-# Genre Filter
 genres = st.sidebar.multiselect("Genre", options=sorted(df['Genre'].unique()), 
                                default=['Action', 'Sports', 'Shooter'])
 
-# Year Filter
 year_range = st.sidebar.slider("Year Range", 
                               int(df['Year'].min()), int(df['Year'].max()), (2000, 2016))
 
-# Platform Filter
 platforms = st.sidebar.multiselect("Platform", options=sorted(df['Platform'].unique()), default=[])
 
-# **NEW: Region Filter**
 st.sidebar.header("🌍 Region Filter")
 na_filter = st.sidebar.checkbox("North America (NA)", value=True)
 eu_filter = st.sidebar.checkbox("Europe (EU)", value=True)
@@ -57,7 +52,7 @@ filtered_df = df[
 if platforms:
     filtered_df = filtered_df[filtered_df['Platform'].isin(platforms)]
 
-# Region Filtering Logic
+# Region mask
 region_mask = pd.Series([False] * len(filtered_df), index=filtered_df.index)
 if na_filter:    region_mask |= (filtered_df['NA_Sales'] > 0)
 if eu_filter:    region_mask |= (filtered_df['EU_Sales'] > 0)
@@ -67,7 +62,13 @@ if other_filter: region_mask |= (filtered_df['Other_Sales'] > 0)
 filtered_df = filtered_df[region_mask]
 
 # ====================== TABS ======================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Overview", "📊 Distributions", "📈 Trends", "🔥 Insights", "📍 Regional Analysis"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 Overview", 
+    "📊 Distributions", 
+    "📈 Trends", 
+    "🔥 Insights", 
+    "📍 Regional Analysis"
+])
 
 with tab1:
     col1, col2, col3, col4 = st.columns(4)
@@ -85,17 +86,48 @@ with tab2:
     with col1:
         genre_sales = filtered_df.groupby('Genre')['Global_Sales'].sum().reset_index().sort_values('Global_Sales', ascending=False)
         st.plotly_chart(px.pie(genre_sales.head(10), names='Genre', values='Global_Sales', 
-                             title="Top 10 Genres by Sales", hole=0.4), use_container_width=True)
-    
+                             title="Top 10 Genres by Global Sales", hole=0.4), use_container_width=True)
     with col2:
         family_sales = filtered_df.groupby('Platform_Family')['Global_Sales'].sum().reset_index()
         st.plotly_chart(px.pie(family_sales, names='Platform_Family', values='Global_Sales',
                              title="Sales by Platform Family", hole=0.4), use_container_width=True)
 
-with tab3:
-    yearly = filtered_df.groupby('Year')['Global_Sales'].sum().reset_index()
-    st.plotly_chart(px.line(yearly, x='Year', y='Global_Sales', title="Global Sales Trend Over Time"), 
-                   use_container_width=True)
+with tab3:   # ================== TRENDS TAB ==================
+    st.subheader("📈 Sales Trends by Region")
+    
+    # Prepare data for all regions
+    trend_data = filtered_df.groupby('Year').agg({
+        'Global_Sales': 'sum',
+        'NA_Sales': 'sum',
+        'EU_Sales': 'sum',
+        'JP_Sales': 'sum',
+        'Other_Sales': 'sum'
+    }).reset_index()
+
+    # Create multi-line chart
+    fig_trends = px.line(trend_data, x='Year', 
+                        y=['Global_Sales', 'NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales'],
+                        title="Sales Trends Over Years by Region",
+                        markers=True,
+                        line_shape="spline")
+    
+    fig_trends.update_layout(
+        xaxis_title="Release Year",
+        yaxis_title="Sales (in millions)",
+        legend_title="Region"
+    )
+    
+    st.plotly_chart(fig_trends, use_container_width=True)
+
+    # Individual region trends (optional but nice)
+    st.subheader("Individual Region Trends")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(px.line(trend_data, x='Year', y='NA_Sales', title="North America Sales Trend"), use_container_width=True)
+        st.plotly_chart(px.line(trend_data, x='Year', y='JP_Sales', title="Japan Sales Trend"), use_container_width=True)
+    with col2:
+        st.plotly_chart(px.line(trend_data, x='Year', y='EU_Sales', title="Europe Sales Trend"), use_container_width=True)
+        st.plotly_chart(px.line(trend_data, x='Year', y='Other_Sales', title="Other Regions Sales Trend"), use_container_width=True)
 
 with tab4:
     st.subheader("Platform Family Performance")
@@ -110,14 +142,10 @@ with tab5:
     st.subheader("Regional Sales Breakdown")
     region_data = pd.DataFrame({
         'Region': ['North America', 'Europe', 'Japan', 'Other'],
-        'Sales': [
-            filtered_df['NA_Sales'].sum(),
-            filtered_df['EU_Sales'].sum(),
-            filtered_df['JP_Sales'].sum(),
-            filtered_df['Other_Sales'].sum()
-        ]
+        'Sales': [filtered_df['NA_Sales'].sum(), filtered_df['EU_Sales'].sum(),
+                 filtered_df['JP_Sales'].sum(), filtered_df['Other_Sales'].sum()]
     })
     st.plotly_chart(px.pie(region_data, names='Region', values='Sales', 
                           title="Sales Distribution by Region", hole=0.4), use_container_width=True)
 
-st.caption("Dashboard built by Ahmed Nabil | Data: vgsales.csv")
+st.caption("Built by Ahmed Nabil | Built with Streamlit")
